@@ -208,6 +208,7 @@ exclude:
   - tools
   - README.md
   - LICENSE
+  - SiteMaintenance.md
   - purgecss.js
   - "*.config.js"
   - "package*.json"
