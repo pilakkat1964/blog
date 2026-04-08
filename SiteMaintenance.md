@@ -18,6 +18,7 @@ A practical reference for building, authoring, and deploying **Santhosh's Tech N
 10. [Git & Deployment](#10-git--deployment)
 11. [Troubleshooting](#11-troubleshooting)
 12. [Useful References](#12-useful-references)
+13. [Helper Scripts Reference](#13-helper-scripts-reference)
 
 ---
 
@@ -49,6 +50,11 @@ A practical reference for building, authoring, and deploying **Santhosh's Tech N
 │   └── img/
 │       ├── avatar.jpg   # Sidebar profile photo
 │       └── favicons/    # Favicon set
+├── tools/
+│   └── check-links.py   # Pre-publish link validator (Python)
+├── run-site.sh          # Clean build + serve (published only)
+├── run-draft-site.sh    # Clean build + serve (published + drafts)
+├── SiteMaintenance.md   # This document (excluded from built site)
 ├── Gemfile              # Ruby gem dependencies
 ├── Gemfile.lock         # Locked gem versions (must be committed)
 └── CNAME                # Custom domain mapping
@@ -94,15 +100,17 @@ bundle install
 |---|---|
 | Build the site (published posts only) | `bundle exec jekyll build` |
 | Build including drafts | `bundle exec jekyll build --drafts` |
-| Serve locally — published only | `bundle exec jekyll serve` |
-| Serve locally — include drafts | `bundle exec jekyll serve --drafts` |
+| Serve locally — published only | `./run-site.sh` |
+| Serve locally — include drafts | `./run-draft-site.sh` |
 | Serve locally — include `published: false` posts | `bundle exec jekyll serve --unpublished` |
 | Serve locally — show everything | `bundle exec jekyll serve --drafts --unpublished` |
 | Clean build (wipe cache and output) | `rm -rf .jekyll-cache _site && bundle exec jekyll build` |
+| Check for broken internal links | `python3 tools/check-links.py` |
+| Check links + full htmlproofer validation | `python3 tools/check-links.py --htmlproofer` |
 
 The local server runs at **http://localhost:4000** by default. Changes to `_config.yml` require a server restart; changes to posts are picked up automatically when using `--watch` (included by default with `serve`).
 
-> **Tip:** Always do a clean build before committing if you have changed `_config.yml` or moved files between `_posts/` and `_drafts/`.
+> **Tip:** Use `./run-site.sh` and `./run-draft-site.sh` — they always do a clean build first, avoiding stale cache issues.
 
 ---
 
@@ -132,9 +140,32 @@ Drafts appear in the post list and category pages. They are **never** included i
 
 Edit the file, save — Jekyll will automatically regenerate the page in the browser (live-reload is enabled by default with `serve`).
 
-### Step 4 — Publish
+### Step 4 — Pre-publish validation
 
-When the post is ready, move it from `_drafts/` to `_posts/`:
+Before moving a draft to `_posts/`, run the link checker to catch any internal links pointing to posts that are still drafts. The CI pipeline (`htmlproofer`) will reject such links and block deployment.
+
+```bash
+# Check for broken internal links and auto-fix them
+python3 tools/check-links.py
+
+# Full validation: fix links + clean build + htmlproofer (mirrors CI exactly)
+python3 tools/check-links.py --htmlproofer
+```
+
+If `check-links.py` finds a link pointing to a draft post, it automatically replaces it with plain text:
+
+```
+[Embedded Rust on ARM Cortex-M](/posts/embedded-rust-getting-started/)
+  →  Embedded Rust on ARM Cortex-M *(coming soon)*
+```
+
+Commit the auto-fixed files before pushing.
+
+> **Why this matters:** GitHub Actions runs `htmlproofer` on every push. If a published post links to a URL that doesn't exist in the built site (e.g., a draft), the build fails and the site is not deployed. Running the checker locally catches this before CI does.
+
+### Step 5 — Publish
+
+When the post is ready and all links are valid, move it from `_drafts/` to `_posts/`:
 
 ```bash
 git mv _drafts/2026-05-01-my-new-post.md _posts/
@@ -325,15 +356,18 @@ The repo uses a single `main` branch. All commits to `main` trigger the GitHub A
 ### Typical commit workflow
 
 ```bash
-# Check what has changed
+# 1. Check what has changed
 git status
 git diff
 
-# Stage and commit
+# 2. Validate links and run htmlproofer (catches broken links before CI does)
+python3 tools/check-links.py --htmlproofer
+
+# 3. Stage and commit
 git add _posts/2026-05-01-my-new-post.md
 git commit -m "Publish: My New Post Title"
 
-# Push — triggers deployment
+# 4. Push — triggers deployment
 git push
 ```
 
@@ -394,6 +428,20 @@ rm -rf .jekyll-cache _site
 bundle exec jekyll serve
 ```
 
+### CI build fails: "internally linking to /posts/X/, which does not exist"
+
+**Cause:** A published post contains a Markdown link pointing to a post that is currently in `_drafts/` (and therefore not built in production). `htmlproofer` treats this as a broken link.
+
+```bash
+# Find and auto-fix all broken internal links
+python3 tools/check-links.py
+
+# Preview what would be changed without modifying files
+python3 tools/check-links.py --dry-run
+```
+
+The script replaces `[label](/posts/missing-slug/)` with `label *(coming soon)*`. Commit the fixed files and push again.
+
 ### Drafts not showing locally
 
 Use the `--drafts` flag — it is **not** the default:
@@ -430,3 +478,25 @@ theme_mode:          # ❌ wrong — treated as null
 | mise Ruby version manager | https://mise.jdx.dev/ |
 | GitHub Pages documentation | https://docs.github.com/en/pages |
 | YAML syntax reference | https://learnxinyminutes.com/docs/yaml/ |
+
+---
+
+## 13. Helper Scripts Reference
+
+| Script | Purpose |
+|---|---|
+| `./run-site.sh` | Clean build + `jekyll serve` (published posts only) |
+| `./run-draft-site.sh` | Clean build + `jekyll serve --drafts` (all posts) |
+| `python3 tools/check-links.py` | Scan published posts for broken internal links; auto-fix |
+| `python3 tools/check-links.py --dry-run` | Preview fixes without modifying any files |
+| `python3 tools/check-links.py --htmlproofer` | Fix links + clean build + full htmlproofer validation |
+
+### When to run each script
+
+| Situation | Script to run |
+|---|---|
+| Writing / editing a draft | `./run-draft-site.sh` |
+| Checking what the live site will look like | `./run-site.sh` |
+| Before moving a draft to `_posts/` | `python3 tools/check-links.py` |
+| Before every `git push` | `python3 tools/check-links.py --htmlproofer` |
+| CI failed with htmlproofer error | `python3 tools/check-links.py --dry-run` to diagnose, then without `--dry-run` to fix |
