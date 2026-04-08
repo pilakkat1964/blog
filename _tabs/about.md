@@ -27,15 +27,6 @@ This blog documents my technical explorations across the following areas:
 - **M.Tech in Software Engineering** — National University of Singapore (ISS), 2003–2005
 - **B.Tech in Electronics Engineering** — National Institute of Technology (NIT) Calicut, India, 1982–1987
 
-## Selected Work
-
-A few highlights from 30 years in the field:
-
-- **5GAMSUS** — System Architect for A\*STAR's 5G for Advanced Manufacturing & Smart Urban Systems inter-institute program
-- **Defence SDR UAV Modem** — PM & Technical Lead for a custom OFDM modem with AES256 encryption; field-tested in Australia
-- **Reconfigurable Avionics Platform** — SDR platform for Airbus using Xilinx Virtex-5 partial run-time reconfiguration
-- **Cdma2000 1x (Motorola)** — One of three corporate system architects for the Sprint PCS technology demonstrator
-
 ## Get in Touch
 
 - 📧 [pilakkat1964@gmail.com](mailto:pilakkat1964@gmail.com)
