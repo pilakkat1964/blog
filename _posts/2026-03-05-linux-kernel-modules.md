@@ -71,4 +71,4 @@ module_exit(my_driver_exit);
 
 ---
 
-*See also: [FPGA AXI DMA on Zynq](/posts/fpga-axi-dma-deep-dive/) for a production kernel driver example.*
+*See also: FPGA AXI DMA on Zynq (coming soon) for a production kernel driver example.*
