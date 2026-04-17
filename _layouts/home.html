@@ -1,0 +1,35 @@
+---
+layout: default
+---
+
+<style>
+  .hierarchy-nav {
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    padding: 12px 0;
+    margin-bottom: 20px;
+    margin-left: -999px;
+    margin-right: -999px;
+    padding-left: calc(999px + 15px);
+    padding-right: calc(999px + 15px);
+  }
+  .hierarchy-nav a {
+    color: #0366d6;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  .hierarchy-nav a:hover {
+    color: #0256c7;
+    text-decoration: underline;
+  }
+</style>
+
+<div class="hierarchy-nav">
+  <a href="/" title="Navigate to site home">
+    ↑ Site Home
+  </a>
+</div>
+
+{{ content }}
